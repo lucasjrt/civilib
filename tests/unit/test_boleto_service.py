@@ -3,7 +3,9 @@ from decimal import Decimal
 
 from incc_shared.models.request.boleto.create import CreateBoletoModel
 from incc_shared.models.request.boleto.update import UpdateBoletoModel
+from incc_shared.models.response.boleto import BoletoResponseModel
 from incc_shared.service.boleto import create_boleto, get_boleto, update_boleto
+from incc_shared.service.customer import get_customer
 from incc_shared.service.organization import get_org
 
 
@@ -22,6 +24,17 @@ def test_create_boleto(boleto_data: dict):
     assert boleto.vencimento == boleto_data["vencimento"]
     assert boleto.emissao == boleto_data["emissao"]
     assert boleto.pagadorId == boleto_data["pagadorId"]
+
+    customer = get_customer(boleto.pagadorId)
+    assert customer
+    responseModel = BoletoResponseModel.from_entities(boleto, customer)
+    assert responseModel
+    assert responseModel.pagador
+
+    responseDict = responseModel.to_item()
+    assert "entity" not in responseDict
+    assert "pagadorId" not in responseDict
+    assert "entity" not in responseDict["pagador"]
 
     org = get_org()
     assert org
