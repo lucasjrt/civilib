@@ -21,7 +21,7 @@ def test_create_boleto(boleto_data: dict):
     assert boleto.valor == boleto_data["valor"]
     assert boleto.vencimento == boleto_data["vencimento"]
     assert boleto.emissao == boleto_data["emissao"]
-    assert boleto.pagador == boleto_data["pagador"]
+    assert boleto.pagadorId == boleto_data["pagadorId"]
 
     org = get_org()
     assert org

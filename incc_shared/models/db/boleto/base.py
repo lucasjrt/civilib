@@ -25,7 +25,7 @@ class BoletoBase(DynamoSerializableModel):
     valor: ConstrainedMoney
     vencimento: date
     emissao: date
-    pagador: ULID
+    pagadorId: ULID
     dataBaseReajuste: Optional[date] = None
     dataIndiceReajuste: Optional[date] = None
     indiceReajuste: Optional[Decimal] = None

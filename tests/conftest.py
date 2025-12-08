@@ -272,7 +272,7 @@ def boleto_data(test_customer: CustomerModel):
         "valor": 10,
         "vencimento": vencimento,
         "emissao": today,
-        "pagador": test_customer.customerId,
+        "pagadorId": test_customer.customerId,
     }
 
 
