@@ -13,6 +13,7 @@ class ScheduleStatus(str, Enum):
     ativo = "ATIVO"
     concluido = "CONCLUIDO"
     cancelado = "CANCELADO"
+    deletado = "DELETADO"
     erro = "ERRO"
     pausado = "PAUSADO"
 

@@ -1,7 +1,10 @@
 from ulid import ULID
 
+from incc_shared.auth.context import get_context_entity
 from incc_shared.constants import EntityType
+from incc_shared.models.db.schedule.base import ScheduleStatus
 from incc_shared.models.db.schedule.schedule import ScheduleModel
+from incc_shared.models.feature import Action, Resource, Scope
 from incc_shared.models.request.schedule.create import CreateScheduleModel
 from incc_shared.models.request.schedule.update import UpdateScheduleModel
 from incc_shared.service.storage.dynamodb import (
@@ -46,6 +49,18 @@ def update_schedule(
     return update_dynamo_item(key, to_update.to_item(), remove_paths=remove_paths)
 
 
-def delete_schedule(schedule_id: ULID):
+def delete_schedule(schedule_id: ULID, soft_delete=True):
+    if soft_delete:
+        return update_schedule(
+            schedule_id,
+            UpdateScheduleModel(status=ScheduleStatus.cancelado),
+            remove_from_index=True,
+        )
+
+    user = get_context_entity()
+    if not user.has_permission(Action.write, Resource.org, Scope.all):
+        raise PermissionError(
+            "User does not have permission to permanently delete schedule"
+        )
     key = get_dynamo_key(EntityType.schedule, schedule_id)
     delete_dynamo_item(key)
