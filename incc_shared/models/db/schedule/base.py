@@ -21,7 +21,7 @@ class ScheduleStatus(str, Enum):
 class ScheduleBase(DynamoSerializableModel):
     id: ULID
     valorBase: ConstrainedMoney = Field(..., description="O valor base de cada parcela")
-    pagador: ULID
+    pagadorId: ULID
     vencimento: date = Field(
         ...,
         description="Primeiro vencimento. Os seguintes serão computados com base neste",

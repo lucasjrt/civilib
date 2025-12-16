@@ -83,7 +83,7 @@ def run_schedule(schedule: ScheduleIndexModel, nosso_numero: int):
         "dataIndiceReajuste": get_data_indice(),
         "indiceReajuste": get_indice_reajuste(),
         "emissao": date.today(),
-        "pagadorId": schedule.pagador,
+        "pagadorId": schedule.pagadorId,
     }
     boleto = CreateBoletoModel(**boleto_data)
 

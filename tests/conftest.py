@@ -85,7 +85,7 @@ def table():
                         "NonKeyAttributes": [
                             "valorBase",
                             "vencimento",
-                            "pagador",
+                            "pagadorId",
                             "parcelas",
                             "parcelasEmitidas",
                             "intervaloParcelas",
@@ -282,7 +282,7 @@ def schedule_data(test_customer: CustomerModel):
     dataInicio = SCHEDULE_DATE
     return {
         "valorBase": 10,
-        "pagador": test_customer.customerId,
+        "pagadorId": test_customer.customerId,
         "vencimento": vencimento,
         "parcelas": 36,
         "dataInicio": dataInicio,

@@ -15,7 +15,7 @@ class ScheduleIndexModel(DynamoSerializableModel):
 
     proximaExecucao: date
     valorBase: ConstrainedMoney
-    pagador: ULID
+    pagadorId: ULID
     vencimento: date
     parcelas: int
     parcelasEmitidas: int
