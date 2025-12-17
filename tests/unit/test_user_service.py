@@ -1,10 +1,10 @@
 import pytest
 
-from incc_shared.auth.context import get_context_entity, impersonate, set_context_entity
-from incc_shared.exceptions.errors import PermissionDenied
-from incc_shared.models.request.user.create import CreateUserModel
-from incc_shared.service.organization import get_org
-from incc_shared.service.user import create_user, get_user, list_users
+from civilib.auth.context import get_context_entity, impersonate, set_context_entity
+from civilib.exceptions.errors import PermissionDenied
+from civilib.models.request.user.create import CreateUserModel
+from civilib.service.organization import get_org
+from civilib.service.user import create_user, get_user, list_users
 
 
 def test_user_lifecycle():

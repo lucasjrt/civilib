@@ -1,0 +1,181 @@
+from datetime import date
+
+from cefapi.api import Cedente, IncluiBoletoModel, TipoPessoa, WebService
+from cefapi.models import Sacado
+from cefapi.models import TipoJuros as CefTipoJuros
+from cefapi.models import Titulo
+from dateutil.relativedelta import relativedelta
+
+from civilib.constants import EntityType
+from civilib.exceptions.errors import InvalidState
+from civilib.models.common import (
+    TipoDocumento,
+    TipoJuros,
+    get_default_juros,
+    get_default_multa,
+)
+from civilib.models.db.boleto.base import StatusBoleto
+from civilib.models.db.boleto.boleto import BoletoModel
+from civilib.models.db.organization.organization import OrganizationModel
+from civilib.models.request.boleto.create import CreateBoletoModel
+from civilib.models.request.boleto.update import UpdateBoletoModel
+from civilib.service.customer import get_customer
+from civilib.service.organization import get_org, update_nosso_numero
+from civilib.service.storage.dynamodb import (
+    create_dynamo_item,
+    delete_dynamo_item,
+    get_dynamo_item,
+    get_dynamo_key,
+    list_dynamo_entity,
+    update_dynamo_item,
+)
+
+
+def get_boleto(nosso_numero: int):
+    key = get_dynamo_key(EntityType.boleto, str(nosso_numero))
+    return get_dynamo_item(key, BoletoModel)
+
+
+def create_boleto(boleto: CreateBoletoModel):
+    org = get_org()
+    if not org:
+        raise InvalidState("Org does not exist")
+
+    nosso_numero = org.nossoNumero
+
+    if not boleto.juros:
+        if org.defaults:
+            boleto.juros = org.defaults.juros
+        else:
+            boleto.juros = get_default_juros()
+
+    if not boleto.multa:
+        if org.defaults:
+            boleto.multa = org.defaults.multa
+        else:
+            boleto.multa = get_default_multa()
+
+    model = BoletoModel(
+        nossoNumero=nosso_numero,
+        status=[StatusBoleto.emitido],
+        **boleto.to_item(),
+    )
+
+    cedente = create_cedente_from_org(org)
+    ws = WebService(cedente)
+
+    dados_boleto = create_inclui_boleto_model(model, cedente, org)
+    ws.inclui_boleto(dados_boleto)
+
+    create_dynamo_item(model.to_item())
+
+    update_nosso_numero(org)
+
+    return nosso_numero
+
+
+def update_boleto(nosso_numero: int, boleto: UpdateBoletoModel):
+    key = get_dynamo_key(EntityType.boleto, str(nosso_numero))
+    update_dynamo_item(key, boleto.to_item())
+
+
+def delete_boleto(nosso_numero: int):
+    key = get_dynamo_key(EntityType.boleto, str(nosso_numero))
+    delete_dynamo_item(key)
+
+
+def list_boletos():
+    return list_dynamo_entity(EntityType.boleto, BoletoModel)
+
+
+def create_cedente_from_org(org: OrganizationModel):
+    beneficiario = org.beneficiario
+    if not beneficiario:
+        raise InvalidState("Org beneficiario is not set")
+    tipo_pessoa = TipoPessoa.Juridica
+    if beneficiario.tipoDocumento == TipoDocumento.CPF:
+        tipo_pessoa = TipoPessoa.Fisica
+
+    cedente = Cedente(
+        agencia=beneficiario.agencia,
+        agencia_dv=beneficiario.agenciaDv,
+        convenio=beneficiario.convenio,
+        nome=beneficiario.nome,
+        inscricao_numero=beneficiario.documento,
+        inscricao_tipo=tipo_pessoa,
+    )
+
+    return cedente
+
+
+def create_inclui_boleto_model(
+    boleto_model: BoletoModel,
+    cedente: Cedente,
+    org: OrganizationModel,
+):
+    pagador = get_customer(boleto_model.pagadorId)
+    if not pagador:
+        raise InvalidState("Pagador does not exist")
+    tipo_sacado = TipoPessoa.Fisica
+    if pagador.tipoDocumento == TipoDocumento.CNPJ:
+        tipo_sacado = TipoPessoa.Juridica
+
+    sacado = Sacado(
+        inscricao_tipo=tipo_sacado,
+        inscricao_numero=pagador.documento,
+        nome=pagador.nome,
+        bairro=pagador.endereco.bairro or "",
+        cep=pagador.endereco.bairro or "",
+        cidade=pagador.endereco.bairro or "",
+        logradouro=pagador.endereco.bairro or "",
+        uf=pagador.endereco.bairro or "",
+    )
+
+    defaults = org.defaults
+    if not defaults:
+        raise InvalidState("Org defaults is not set")
+
+    juros = boleto_model.juros
+    if not juros:
+        juros = defaults.juros
+
+    multa = boleto_model.multa
+    if not multa:
+        multa = defaults.multa
+
+    titulo = Titulo(
+        nosso_numero=org.nossoNumero,
+        numero_documento=str(org.nossoNumero),
+        valor=boleto_model.valor,
+        vencimento=boleto_model.vencimento,
+        com_qrcode=defaults.comQrcode,
+        juros_mora_tipo=convert_tipo_juros(juros.tipo),
+        juros_mora_data=prazo_to_date(juros.prazo),
+        juros_mora_valor=juros.valor,
+        multa_tipo=convert_tipo_juros(multa.tipo),
+        multa_data=prazo_to_date(multa.prazo),
+        multa_valor=multa.valor,
+    )
+
+    inclui_boleto = IncluiBoletoModel(
+        cedente=cedente,
+        sacado=sacado,
+        titulo=titulo,
+    )
+    return inclui_boleto
+
+
+def convert_tipo_juros(tipo_juros: TipoJuros) -> CefTipoJuros:
+    if tipo_juros == TipoJuros.fixa:
+        return CefTipoJuros.Fixa
+    elif tipo_juros == TipoJuros.taxa:
+        return CefTipoJuros.Taxa
+    else:
+        return CefTipoJuros.Isento
+
+
+def prazo_to_date(prazo: int) -> date:
+    if prazo <= 0:
+        raise ValueError("Prazo deve ser maior que zero")
+    hoje = date.today()
+    return hoje + relativedelta(days=prazo)

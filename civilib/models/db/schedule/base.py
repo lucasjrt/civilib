@@ -1,0 +1,53 @@
+from datetime import date
+from enum import Enum
+from typing import Optional
+
+from pydantic import Field, model_validator
+from ulid import ULID
+
+from civilib.models import ConstrainedMoney
+from civilib.models.base import DynamoSerializableModel
+
+
+class ScheduleStatus(str, Enum):
+    ativo = "ATIVO"
+    concluido = "CONCLUIDO"
+    cancelado = "CANCELADO"
+    deletado = "DELETADO"
+    erro = "ERRO"
+    pausado = "PAUSADO"
+
+
+class ScheduleBase(DynamoSerializableModel):
+    id: ULID
+    valorBase: ConstrainedMoney = Field(..., description="O valor base de cada parcela")
+    pagadorId: ULID
+    vencimento: date = Field(
+        ...,
+        description="Primeiro vencimento. Os seguintes serão computados com base neste",
+    )
+    parcelas: int = Field(
+        ...,
+        ge=1,
+        le=420,
+        description="Número total de boletos que serão gerados",
+    )
+    intervaloParcelas: int = Field(
+        1, ge=1, description="Intervalo entre parcelas. Útil em balões"
+    )
+    status: ScheduleStatus = ScheduleStatus.ativo
+    parcelasEmitidas: int = 0
+    proximaExecucao: Optional[date] = Field(
+        None,
+        description="Indice usado pelo executor para listar os agendamentos do dia",
+    )
+    dataInicio: date = Field(
+        default_factory=date.today,
+        description="Data em que o primeiro boleto será emitido. Os seguintes serão computados com base neste",
+    )
+
+    @model_validator(mode="after")
+    def valida_datas(self) -> "ScheduleBase":
+        if self.dataInicio > self.vencimento:
+            raise ValueError("dataInicio deve ser antes que vencimento")
+        return self

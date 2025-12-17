@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from incc_shared.service.calculator import calcula_valor
+from civilib.service.calculator import calcula_valor
 
 
 def test_calculator():

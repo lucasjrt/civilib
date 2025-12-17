@@ -1,12 +1,12 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from incc_shared.models.request.boleto.create import CreateBoletoModel
-from incc_shared.models.request.boleto.update import UpdateBoletoModel
-from incc_shared.models.response.boleto import BoletoResponseModel
-from incc_shared.service.boleto import create_boleto, get_boleto, update_boleto
-from incc_shared.service.customer import get_customer
-from incc_shared.service.organization import get_org
+from civilib.models.request.boleto.create import CreateBoletoModel
+from civilib.models.request.boleto.update import UpdateBoletoModel
+from civilib.models.response.boleto import BoletoResponseModel
+from civilib.service.boleto import create_boleto, get_boleto, update_boleto
+from civilib.service.customer import get_customer
+from civilib.service.organization import get_org
 
 
 def test_create_boleto(boleto_data: dict):

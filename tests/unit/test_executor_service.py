@@ -3,12 +3,12 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
-from incc_shared.admin.service.executor import execute_schedules
-from incc_shared.admin.service.schedule import list_schedules_for_date
-from incc_shared.models.db.schedule import ScheduleModel
-from incc_shared.models.db.schedule.base import ScheduleStatus
-from incc_shared.service.boleto import list_boletos
-from incc_shared.service.schedule import get_schedule
+from civilib.admin.service.executor import execute_schedules
+from civilib.admin.service.schedule import list_schedules_for_date
+from civilib.models.db.schedule import ScheduleModel
+from civilib.models.db.schedule.base import ScheduleStatus
+from civilib.service.boleto import list_boletos
+from civilib.service.schedule import get_schedule
 from tests.conftest import SCHEDULE_DATE
 
 data_execucao = SCHEDULE_DATE

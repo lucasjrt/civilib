@@ -1,12 +1,12 @@
-from incc_shared.models.db.customer import CustomerModel
-from incc_shared.models.request.customer.update import UpdateCustomerModel
-from incc_shared.service.customer import (
+from civilib.models.db.customer import CustomerModel
+from civilib.models.request.customer.update import UpdateCustomerModel
+from civilib.service.customer import (
     delete_customer,
     get_customer,
     list_customers,
     update_customer,
 )
-from incc_shared.service.storage.base import to_model
+from civilib.service.storage.base import to_model
 
 
 def test_customer_lifecycle(

@@ -1,15 +1,15 @@
 import pytest
 
-from incc_shared.exceptions.errors import InvalidState
-from incc_shared.models.common import TipoDocumento
-from incc_shared.models.request.organization.org_setup import SetupOrgModel
-from incc_shared.models.request.organization.update import UpdateOrganizationModel
-from incc_shared.service.organization import (
+from civilib.exceptions.errors import InvalidState
+from civilib.models.common import TipoDocumento
+from civilib.models.request.organization.org_setup import SetupOrgModel
+from civilib.models.request.organization.update import UpdateOrganizationModel
+from civilib.service.organization import (
     get_org,
     setup_organization,
     update_organization,
 )
-from incc_shared.service.storage.base import to_model
+from civilib.service.storage.base import to_model
 
 
 def test_org_lifecycle():

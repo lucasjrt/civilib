@@ -7,18 +7,18 @@ from moto import mock_aws
 from mypy_boto3_dynamodb.service_resource import Table
 from ulid import ULID
 
-from incc_shared.admin.service.organization import create_organization
-from incc_shared.auth.constants import get_cognito_pool_id
-from incc_shared.auth.context import set_context_entity
-from incc_shared.models.db.customer import CustomerModel
-from incc_shared.models.db.user.user import UserModel
-from incc_shared.models.feature import Feature, Resource, Scope
-from incc_shared.models.request.customer.create import CreateCustomerModel
-from incc_shared.models.request.schedule.create import CreateScheduleModel
-from incc_shared.service.customer import create_customer, delete_customer, get_customer
-from incc_shared.service.organization import get_org
-from incc_shared.service.schedule import create_schedule, delete_schedule, get_schedule
-from incc_shared.service.user import get_sub
+from civilib.admin.service.organization import create_organization
+from civilib.auth.constants import get_cognito_pool_id
+from civilib.auth.context import set_context_entity
+from civilib.models.db.customer import CustomerModel
+from civilib.models.db.user.user import UserModel
+from civilib.models.feature import Feature, Resource, Scope
+from civilib.models.request.customer.create import CreateCustomerModel
+from civilib.models.request.schedule.create import CreateScheduleModel
+from civilib.service.customer import create_customer, delete_customer, get_customer
+from civilib.service.organization import get_org
+from civilib.service.schedule import create_schedule, delete_schedule, get_schedule
+from civilib.service.user import get_sub
 
 today = date.today()
 

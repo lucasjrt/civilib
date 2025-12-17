@@ -1,15 +1,15 @@
-from incc_shared.models.db.schedule import ScheduleModel
-from incc_shared.models.db.schedule.base import ScheduleStatus
-from incc_shared.models.request.schedule.update import UpdateScheduleModel
-from incc_shared.models.response.schedule import ScheduleResponseModel
-from incc_shared.service.customer import get_customer
-from incc_shared.service.schedule import (
+from civilib.models.db.schedule import ScheduleModel
+from civilib.models.db.schedule.base import ScheduleStatus
+from civilib.models.request.schedule.update import UpdateScheduleModel
+from civilib.models.response.schedule import ScheduleResponseModel
+from civilib.service.customer import get_customer
+from civilib.service.schedule import (
     delete_schedule,
     get_schedule,
     list_schedules,
     update_schedule,
 )
-from incc_shared.service.storage.base import to_model
+from civilib.service.storage.base import to_model
 
 
 def test_schedule_lifecycle(
