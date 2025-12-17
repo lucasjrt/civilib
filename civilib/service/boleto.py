@@ -66,6 +66,8 @@ def create_boleto(boleto_request: CreateBoletoModel):
     dados_boleto = create_inclui_boleto_model(boleto_model, cedente, org)
     boleto = ws.inclui_boleto(dados_boleto)
     print(f"Boleto recebido: {boleto}")
+    if not boleto["DADOS"]["INCLUI_BOLETO"]:
+        raise InvalidState(f"Erro ao criar boleto: {boleto['DADOS']}")
 
     create_dynamo_item(boleto_model.to_item())
 
