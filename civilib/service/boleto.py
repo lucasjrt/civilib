@@ -23,7 +23,6 @@ from civilib.service.customer import get_customer
 from civilib.service.organization import get_org, update_nosso_numero
 from civilib.service.storage.dynamodb import (
     create_dynamo_item,
-    delete_dynamo_item,
     get_dynamo_item,
     get_dynamo_key,
     list_dynamo_entity,
@@ -36,38 +35,39 @@ def get_boleto(nosso_numero: int):
     return get_dynamo_item(key, BoletoModel)
 
 
-def create_boleto(boleto: CreateBoletoModel):
+def create_boleto(boleto_request: CreateBoletoModel):
     org = get_org()
     if not org:
         raise InvalidState("Org does not exist")
 
     nosso_numero = org.nossoNumero
 
-    if not boleto.juros:
+    if not boleto_request.juros:
         if org.defaults:
-            boleto.juros = org.defaults.juros
+            boleto_request.juros = org.defaults.juros
         else:
-            boleto.juros = get_default_juros()
+            boleto_request.juros = get_default_juros()
 
-    if not boleto.multa:
+    if not boleto_request.multa:
         if org.defaults:
-            boleto.multa = org.defaults.multa
+            boleto_request.multa = org.defaults.multa
         else:
-            boleto.multa = get_default_multa()
+            boleto_request.multa = get_default_multa()
 
-    model = BoletoModel(
+    boleto_model = BoletoModel(
         nossoNumero=nosso_numero,
         status=[StatusBoleto.emitido],
-        **boleto.to_item(),
+        **boleto_request.to_item(),
     )
 
     cedente = create_cedente_from_org(org)
     ws = WebService(cedente)
 
-    dados_boleto = create_inclui_boleto_model(model, cedente, org)
-    ws.inclui_boleto(dados_boleto)
+    dados_boleto = create_inclui_boleto_model(boleto_model, cedente, org)
+    boleto = ws.inclui_boleto(dados_boleto)
+    print(f"Boleto recebido: {boleto}")
 
-    create_dynamo_item(model.to_item())
+    create_dynamo_item(boleto_model.to_item())
 
     update_nosso_numero(org)
 
@@ -79,9 +79,28 @@ def update_boleto(nosso_numero: int, boleto: UpdateBoletoModel):
     update_dynamo_item(key, boleto.to_item())
 
 
-def delete_boleto(nosso_numero: int):
+def cancel_boleto(nosso_numero: int):
+    # Baixa apenas, não deleta do banco
     key = get_dynamo_key(EntityType.boleto, str(nosso_numero))
-    delete_dynamo_item(key)
+    boleto = get_dynamo_item(key, BoletoModel)
+    if not boleto:
+        raise InvalidState("Boleto does not exist")
+
+    if not can_cancel_boleto(boleto):
+        raise InvalidState(f"Boleto cannot be canceled. Status list: {boleto.status}")
+
+    org = get_org()
+    if not org:
+        raise InvalidState("Org does not exist")
+
+    cedente = create_cedente_from_org(org)
+    ws = WebService(cedente)
+    ws.baixa_boleto(nosso_numero)
+
+    update_dynamo_item(
+        key,
+        {"status": boleto.status + [StatusBoleto.cancelado]},
+    )
 
 
 def list_boletos():
@@ -176,6 +195,13 @@ def convert_tipo_juros(tipo_juros: TipoJuros) -> CefTipoJuros:
 
 def prazo_to_date(prazo: int) -> date:
     if prazo <= 0:
-        raise ValueError("Prazo deve ser maior que zero")
+        prazo = 1
     hoje = date.today()
     return hoje + relativedelta(days=prazo)
+
+
+def can_cancel_boleto(boleto: BoletoModel) -> bool:
+    return boleto.status not in {
+        StatusBoleto.pago,
+        StatusBoleto.cancelado,
+    }
