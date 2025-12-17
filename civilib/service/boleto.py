@@ -87,13 +87,14 @@ def create_boleto(boleto_request: CreateBoletoModel):
         raise InvalidState(f"Dados não retornados")
 
     inclusao = dados.get("INCLUI_BOLETO")
-    url = inclusao.get("URL")
+    caixa_url = inclusao.get("URL")
     linha_digitavel = inclusao.get("LINHA_DIGITAVEL")
 
-    boleto_model.urlBoleto = url
+    save_boleto_to_s3(nosso_numero, caixa_url)
+
+    boleto_model.urlBoleto = caixa_url
     boleto_model.linhaDigitavel = linha_digitavel
 
-    save_boleto_to_s3(nosso_numero, url)
     create_dynamo_item(boleto_model.to_item())
 
     update_nosso_numero(org)
@@ -251,3 +252,21 @@ def save_boleto_to_s3(
         Body=boleto_file.content,
         ContentType="application/pdf",
     )
+
+
+def download_boleto_from_s3(
+    nosso_numero: int,
+) -> bytes:
+    org = get_org()
+    if not org:
+        raise InvalidState("Org does not exist")
+
+    tenant_id = str(org.orgId)
+
+    s3 = boto3.client("s3")
+    boleto_object = s3.get_object(
+        Bucket=BOLETOS_BUCKET,
+        Key=f"{tenant_id}/boletos/{nosso_numero}.pdf",
+    )
+    boleto_file = boleto_object["Body"].read()
+    return boleto_file
