@@ -144,10 +144,10 @@ def create_inclui_boleto_model(
         inscricao_numero=pagador.documento,
         nome=pagador.nome,
         bairro=pagador.endereco.bairro or "",
-        cep=pagador.endereco.bairro or "",
-        cidade=pagador.endereco.bairro or "",
-        logradouro=pagador.endereco.bairro or "",
-        uf=pagador.endereco.bairro or "",
+        cep=pagador.endereco.cep or "",
+        cidade=pagador.endereco.cidade or "",
+        logradouro=pagador.endereco.logradouro or "",
+        uf=pagador.endereco.uf or "",
     )
 
     defaults = org.defaults
