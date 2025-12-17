@@ -1,5 +1,8 @@
+import os
 from datetime import date
 
+import boto3
+import requests
 from cefapi.api import Cedente, IncluiBoletoModel, TipoPessoa, WebService
 from cefapi.models import Sacado
 from cefapi.models import TipoJuros as CefTipoJuros
@@ -28,6 +31,8 @@ from civilib.service.storage.dynamodb import (
     list_dynamo_entity,
     update_dynamo_item,
 )
+
+BOLETOS_BUCKET = os.environ["BOLETOS_BUCKET"]
 
 
 def get_boleto(nosso_numero: int):
@@ -66,9 +71,29 @@ def create_boleto(boleto_request: CreateBoletoModel):
     dados_boleto = create_inclui_boleto_model(boleto_model, cedente, org)
     boleto = ws.inclui_boleto(dados_boleto)
     print(f"Boleto recebido: {boleto}")
-    if not boleto["DADOS"]["INCLUI_BOLETO"]:
-        raise InvalidState(f"Erro ao criar boleto: {boleto['DADOS']}")
+    dados = boleto.get("DADOS", {})
+    controle = dados.get("CONTROLE_NEGOCIAL")
+    codigo_retorno = controle.get("COD_RETORNO")
+    if codigo_retorno == "2":
+        raise InvalidState("Sistema fora do ar")
 
+    if codigo_retorno == "1":
+        mensagem = controle.get("MENSAGENS", {}).get("RETORNO")
+        if mensagem.startswith("(54)"):
+            raise InvalidState("Informações do cedente estão incorretas")
+        raise InvalidState(f"Erro ao criar boleto: {controle.get('MSG_RETORNO')}")
+
+    if not dados:
+        raise InvalidState(f"Dados não retornados")
+
+    inclusao = dados.get("INCLUI_BOLETO")
+    url = inclusao.get("URL")
+    linha_digitavel = inclusao.get("LINHA_DIGITAVEL")
+
+    boleto_model.urlBoleto = url
+    boleto_model.linhaDigitavel = linha_digitavel
+
+    save_boleto_to_s3(nosso_numero, url)
     create_dynamo_item(boleto_model.to_item())
 
     update_nosso_numero(org)
@@ -206,3 +231,23 @@ def can_cancel_boleto(boleto: BoletoModel) -> bool:
         StatusBoleto.pago,
         StatusBoleto.cancelado,
     }
+
+
+def save_boleto_to_s3(
+    nosso_numero: int,
+    url: str,
+):
+    org = get_org()
+    if not org:
+        raise InvalidState("Org does not exist")
+
+    tenant_id = str(org.orgId)
+
+    s3 = boto3.client("s3")
+    boleto_file = requests.get(url)
+    s3.put_object(
+        Bucket=BOLETOS_BUCKET,
+        Key=f"{tenant_id}/boletos/{nosso_numero}.pdf",
+        Body=boleto_file.content,
+        ContentType="application/pdf",
+    )
