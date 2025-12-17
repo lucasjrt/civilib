@@ -171,10 +171,10 @@ def create_inclui_boleto_model(
         vencimento=boleto_model.vencimento,
         com_qrcode=defaults.comQrcode,
         juros_mora_tipo=convert_tipo_juros(juros.tipo),
-        juros_mora_data=prazo_to_date(juros.prazo),
+        juros_mora_data=prazo_to_date(juros.prazo, boleto_model.vencimento),
         juros_mora_valor=juros.valor,
         multa_tipo=convert_tipo_juros(multa.tipo),
-        multa_data=prazo_to_date(multa.prazo),
+        multa_data=prazo_to_date(multa.prazo, boleto_model.vencimento),
         multa_valor=multa.valor,
     )
 
@@ -195,11 +195,10 @@ def convert_tipo_juros(tipo_juros: TipoJuros) -> CefTipoJuros:
         return CefTipoJuros.Isento
 
 
-def prazo_to_date(prazo: int) -> date:
+def prazo_to_date(prazo: int, vencimento: date) -> date:
     if prazo <= 0:
         prazo = 1
-    hoje = date.today()
-    return hoje + relativedelta(days=prazo)
+    return vencimento + relativedelta(days=prazo)
 
 
 def can_cancel_boleto(boleto: BoletoModel) -> bool:
