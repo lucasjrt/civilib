@@ -134,6 +134,15 @@ def cancel_boleto(nosso_numero: int):
     if cod_mensagem in {"CI01", "CI10"}:
         raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
 
+    dados = response["DADOS"]
+    controle = dados["CONTROLE_NEGOCIAL"]
+    codigo_retorno = controle["COD_RETORNO"]
+    if codigo_retorno == "2":
+        raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
+    if codigo_retorno == "1":
+        mensagem = controle["MENSAGENS"]["RETORNO"]
+        raise InvalidState(f"Erro ao cancelar boleto: {mensagem}")
+
     update_dynamo_item(
         key,
         {"status": boleto.status + [StatusBoleto.cancelado]},
