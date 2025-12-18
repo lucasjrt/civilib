@@ -135,7 +135,8 @@ def cancel_boleto(nosso_numero: int):
         raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
 
     dados = response["DADOS"]
-    controle = dados["CONTROLE_NEGOCIAL"]
+    # TODO: When it returns more than one we get worried on handling it
+    controle = dados["CONTROLE_NEGOCIAL"][0]
     codigo_retorno = controle["COD_RETORNO"]
     if codigo_retorno == "2":
         raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
