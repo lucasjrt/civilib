@@ -228,10 +228,11 @@ def prazo_to_date(prazo: int, vencimento: date) -> date:
 
 
 def can_cancel_boleto(boleto: BoletoModel) -> bool:
-    return boleto.status not in {
+    non_cancelable_status = {
         StatusBoleto.pago,
         StatusBoleto.cancelado,
     }
+    return not any(status in non_cancelable_status for status in boleto.status)
 
 
 def save_boleto_to_s3(
