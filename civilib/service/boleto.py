@@ -123,7 +123,11 @@ def cancel_boleto(nosso_numero: int):
 
     cedente = create_cedente_from_org(org)
     ws = WebService(cedente)
-    ws.baixa_boleto(nosso_numero)
+    response = ws.baixa_boleto(nosso_numero)
+
+    msg_retorno = response.get("MSG_RETORNO")
+    if msg_retorno.startswith("(CI10)"):
+        raise InvalidState("Sistema temporariamente indisponível")
 
     update_dynamo_item(
         key,
