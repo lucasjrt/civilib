@@ -10,7 +10,7 @@ from cefapi.models import Titulo
 from dateutil.relativedelta import relativedelta
 
 from civilib.constants import EntityType
-from civilib.exceptions.errors import InvalidState
+from civilib.exceptions.errors import InvalidState, ServiceUnavailable
 from civilib.models.common import (
     TipoDocumento,
     TipoJuros,
@@ -127,7 +127,7 @@ def cancel_boleto(nosso_numero: int):
 
     msg_retorno = response.get("MSG_RETORNO")
     if msg_retorno.startswith("(CI10)"):
-        raise InvalidState("Sistema temporariamente indisponível")
+        raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
 
     update_dynamo_item(
         key,

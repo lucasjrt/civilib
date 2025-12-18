@@ -39,3 +39,8 @@ class IdempotencyError(AppError):
     def __init__(self, message="Idempotency error", metadata=None):
         super().__init__(code="idempotency_error", message=message)
         self.metadata = metadata
+
+
+class ServiceUnavailable(AppError):
+    def __init__(self, message="Service unavailable"):
+        super().__init__(code="service_unavailable", message=message)
