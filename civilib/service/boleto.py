@@ -71,24 +71,24 @@ def create_boleto(boleto_request: CreateBoletoModel):
     dados_boleto = create_inclui_boleto_model(boleto_model, cedente, org)
     boleto = ws.inclui_boleto(dados_boleto)
     print(f"Boleto recebido: {boleto}")
-    dados = boleto.get("DADOS", {})
-    controle = dados.get("CONTROLE_NEGOCIAL")
-    codigo_retorno = controle.get("COD_RETORNO")
+    dados = boleto["DADOS"]
+    controle = dados["CONTROLE_NEGOCIAL"]
+    codigo_retorno = controle["COD_RETORNO"]
     if codigo_retorno == "2":
         raise InvalidState("Sistema fora do ar")
 
     if codigo_retorno == "1":
-        mensagem = controle.get("MENSAGENS", {}).get("RETORNO")
+        mensagem = controle["MENSAGENS"]["RETORNO"]
         if mensagem.startswith("(54)"):
             raise InvalidState("Informações do cedente estão incorretas")
-        raise InvalidState(f"Erro ao criar boleto: {controle.get('MSG_RETORNO')}")
+        raise InvalidState(f"Erro ao criar boleto: {controle['MSG_RETORNO']}")
 
     if not dados:
         raise InvalidState(f"Dados não retornados")
 
-    inclusao = dados.get("INCLUI_BOLETO")
-    caixa_url = inclusao.get("URL")
-    linha_digitavel = inclusao.get("LINHA_DIGITAVEL")
+    inclusao = dados["INCLUI_BOLETO"]
+    caixa_url = inclusao["URL"]
+    linha_digitavel = inclusao["LINHA_DIGITAVEL"]
 
     save_boleto_to_s3(nosso_numero, caixa_url)
 
@@ -125,8 +125,9 @@ def cancel_boleto(nosso_numero: int):
     ws = WebService(cedente)
     response = ws.baixa_boleto(nosso_numero)
 
-    msg_retorno = response.get("MSG_RETORNO")
-    if msg_retorno.startswith("(CI10)"):
+    msg_retorno = response["MSG_RETORNO"]
+    cod_mensagem = msg_retorno[1:4]
+    if cod_mensagem in {"CI01", "CI10"}:
         raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
 
     update_dynamo_item(
