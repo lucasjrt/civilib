@@ -40,6 +40,21 @@ def get_boleto(nosso_numero: int):
     return get_dynamo_item(key, BoletoModel)
 
 
+def sync_boleto(nosso_numero: int):
+    org = get_org()
+    if not org:
+        raise InvalidState("Org does not exist")
+
+    cedente = create_cedente_from_org(org)
+    ws = WebService(cedente)
+    response = ws.consulta_boleto(nosso_numero)
+
+    dados = response["DADOS"]
+    if not dados:
+        raise InvalidState(f"Dados não retornados")
+    print(response)
+
+
 def create_boleto(boleto_request: CreateBoletoModel):
     org = get_org()
     if not org:
