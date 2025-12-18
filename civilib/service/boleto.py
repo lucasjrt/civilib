@@ -126,7 +126,7 @@ def cancel_boleto(nosso_numero: int):
     response = ws.baixa_boleto(nosso_numero)
 
     msg_retorno = response["MSG_RETORNO"]
-    cod_mensagem = msg_retorno[1:4]
+    cod_mensagem = msg_retorno[1:5]
     if cod_mensagem in {"CI01", "CI10"}:
         raise ServiceUnavailable("Sistema da Caixa temporariamente indisponível")
 
